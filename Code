@@ -1,0 +1,247 @@
+#include <iostream>
+#include <cstring>
+#include <stack>
+#include <queue>
+
+using namespace std;
+
+struct itemEntry {
+    float unitPrice;
+    int copies, product_id;
+    char name[30];
+    char company[30];
+    char manufacturingDate[20];
+};
+
+class Store {
+public:
+    int numItem;
+    itemEntry database[100];
+    stack<itemEntry> itemStack; // Stack for inventory display
+    queue<itemEntry> itemQueue; // Queue for inventory display
+
+    Store() {
+        numItem = 0;
+        for (int i = 0; i < 100; i++) {
+            memset(database[i].name, 0, sizeof(database[i].name));
+            memset(database[i].company, 0, sizeof(database[i].company));
+            database[i].product_id = 0;
+            database[i].copies = 0;
+            database[i].unitPrice = 0.0f;
+            memset(database[i].manufacturingDate, 0, sizeof(database[i].manufacturingDate));
+        }
+    }
+
+    void insertItem(char itemName[], char company[], int pid, int c, float p, char* mDate);
+    void deleteItem(char itemName[], int pid);
+    itemEntry* searchItem(char itemName[], int pid);
+    void updateItem(char itemName[], int pid, int total, float price);
+    void displayInventory();
+    void displayInventoryStack();
+    void displayInventoryQueue();
+};
+
+void Store::insertItem(char itemName[], char company[], int pid, int c, float p, char* mDate) {
+    if (numItem >= 100) {
+        cout << "\n\t\t INVENTORY FULL, CANNOT INSERT MORE ITEMS\n";
+        return;
+    }
+
+    // Use strcpy_s for secure string copying to avoid buffer overflow
+    strcpy_s(database[numItem].name, itemName);
+    strcpy_s(database[numItem].company, company);
+    database[numItem].product_id = pid;
+    database[numItem].copies = c;
+    database[numItem].unitPrice = p;
+    strcpy_s(database[numItem].manufacturingDate, mDate);
+    itemStack.push(database[numItem]); // Add to stack
+    itemQueue.push(database[numItem]); // Add to queue
+    cout << "\n\t\t ITEM INSERTED SUCCESSFULLY\n";
+    numItem++;
+}
+
+void Store::deleteItem(char itemName[], int pid) {
+    for (int i = 0; i < numItem; i++) {
+        if ((strcmp(itemName, database[i].name) == 0) && (database[i].product_id == pid)) {
+            if (database[i].copies > 0) {
+                database[i].copies--;
+                cout << "\n\t\t ITEM DELETED SUCCESSFULLY\n";
+            }
+            else {
+                cout << "\n\t\t NO MORE COPIES OF THIS ITEM AVAILABLE\n";
+            }
+            return;
+        }
+    }
+    cout << "\n\t\t ITEM NOT FOUND\n";
+}
+
+itemEntry* Store::searchItem(char itemName[], int pid) {
+    for (int i = 0; i < numItem; i++) {
+        if ((strcmp(itemName, database[i].name) == 0) && (database[i].product_id == pid)) {
+            return &database[i];
+        }
+    }
+    return nullptr;
+}
+
+void Store::updateItem(char itemName[], int pid, int total, float price) {
+    itemEntry* item = searchItem(itemName, pid);
+    if (item != nullptr) {
+        item->copies += total;
+        item->unitPrice = price;
+        cout << "\n\t\t ITEM UPDATED SUCCESSFULLY\n";
+    }
+    else {
+        cout << "\n\t\t ITEM NOT FOUND\n";
+    }
+}
+
+void Store::displayInventory() {
+    cout << "\n\t-------------> INVENTORY <--------------\n";
+    if (numItem == 0) {
+        cout << "\n\t\t INVENTORY IS EMPTY\n";
+    }
+    else {
+        for (int i = 0; i < numItem; i++) {
+            cout << "\n\t\t ITEM " << i + 1 << ": " << database[i].name << " (ID: " << database[i].product_id << ")\n";
+            cout << "\t\t\t Company: " << database[i].company << "\n";
+            cout << "\t\t\t Copies: " << database[i].copies << "\n";
+            cout << "\t\t\t Unit Price: " << database[i].unitPrice << "\n";
+            cout << "\t\t\t Manufacturing Date: " << database[i].manufacturingDate << "\n";
+        }
+    }
+}
+
+void Store::displayInventoryStack() {
+    cout << "\n\t-------------> INVENTORY (Stack) <--------------\n";
+    if (itemStack.empty()) {
+        cout << "\n\t\t INVENTORY IS EMPTY\n";
+    }
+    else {
+        stack<itemEntry> tempStack = itemStack; // Create a temporary stack for display
+        int itemIndex = 1;
+        while (!tempStack.empty()) {
+            itemEntry item = tempStack.top();
+            tempStack.pop();
+            cout << "\n\t\t ITEM " << itemIndex++ << ": " << item.name << " (ID: " << item.product_id << ")\n";
+            // ... (similar output for other item details)
+        }
+    }
+}
+
+void Store::displayInventoryQueue() {
+    cout << "\n\t-------------> INVENTORY (Queue) <--------------\n";
+    if (itemQueue.empty()) {
+        cout << "\n\t\t INVENTORY IS EMPTY\n";
+    }
+    else {
+        queue<itemEntry> tempQueue = itemQueue; // Create a temporary queue for display
+        int itemIndex = 1;
+        while (!tempQueue.empty()) {
+            itemEntry item = tempQueue.front();
+            tempQueue.pop();
+            cout << "\n\t\t ITEM " << itemIndex++ << ": " << item.name << " (ID: " << item.product_id << ")\n";
+            // ... (similar output for other item details)
+        }
+    }
+}
+
+int main() {
+    Store sto;
+    char name[30], company[30], mDate[20];
+    int product_id, copies, option;
+    float unit_price;
+
+    do {
+        cout << "\n\t-------------> DEPARTMENTAL STORE <--------------";
+        cout << "\n\t\t--------------> MENU <------------";
+        cout << "\n\t\t\t 1 FOR INSERT";
+        cout << "\n\t\t\t 2 FOR DELETE";
+        cout << "\n\t\t\t 3 FOR SEARCH";
+        cout << "\n\t\t\t 4 FOR UPDATE";
+        cout << "\n\t\t\t 5 FOR DISPLAYING INVENTORY";
+        cout << "\n\t\t\t 6 FOR DISPLAYING INVENTORY (Stack)";
+        cout << "\n\t\t\t 7 FOR DISPLAYING INVENTORY (Queue)";
+        cout << "\n\t\t\t 8 FOR EXIT";
+        cout << "\n\t\t ENTER YOUR CHOICE : ";
+        cin >> option;
+
+        switch (option) {
+        case 1:
+            cin.ignore();  // Clear the newline character from the input buffer
+            cout << "\n\t\t\t ENTER NAME OF ITEM : ";
+            cin.getline(name, 30);
+            cout << "\n\t\t\t COMPANY: ";
+            cin.getline(company, 30);
+            cout << "\n\t\t\t ENTER PRODUCT ID : ";
+            cin >> product_id;
+            cout << "\n\t\t\t NO. OF COPIES : ";
+            cin >> copies;
+            cout << "\n\t\t\t UNIT PRICE PER ITEM : ";
+            cin >> unit_price;
+            cout << "\n\t\t\t MANUFACTURING DATE: ";
+            cin.ignore();
+            cin.getline(mDate, 20);
+            sto.insertItem(name, company, product_id, copies, unit_price, mDate);
+            break;
+
+        case 2:
+            cin.ignore();
+            cout << "\n\t\t\t ENTER NAME OF ITEM : ";
+            cin.getline(name, 30);
+            cout << "\n\t\t\t ENTER PRODUCT ID : ";
+            cin >> product_id;
+            sto.deleteItem(name, product_id);
+            break;
+
+        case 3:
+            cin.ignore();
+            cout << "\n\t\t\t ENTER NAME OF ITEM : ";
+            cin.getline(name, 30);
+            cout << "\n\t\t\t ENTER PRODUCT ID : ";
+            cin >> product_id;
+            itemEntry* test;
+            test = sto.searchItem(name, product_id);
+            if (test != nullptr) {
+                cout << "\n\t-------------> SEARCHING RESULT <--------------";
+                cout << "\n\t\t\t ITEM FOUND" << "\n\t\t\t NAME OF THE ITEM: " << test->name << "\n\t\t\t COMPANY NAME: "
+                    << test->company << "\n\t\t\t PRODUCT ID: " << test->product_id
+                    << "\n\t\t\t NUMBER OF COPIES AVAILABLE: " << test->copies
+                    << "\n\t\t\t UNIT PRICE PER ITEM: " << test->unitPrice << "\n";
+                cout << "\t\t\t Manufacturing Date: " << test->manufacturingDate << "\n";
+            }
+            else {
+                cout << "\n\t\t\t ITEM NOT FOUND\n";
+            }
+            break;
+
+        case 4:
+            cin.ignore();
+            cout << "\n\t\t\t ENTER NAME OF ITEM : ";
+            cin.getline(name, 30);
+            cout << "\n\t\t\t ENTER PRODUCT ID : ";
+            cin >> product_id;
+            cout << "\n\t\t\t ENTER TOTAL NEW ENTRY : ";
+            cin >> copies;
+            cout << "\n\t\t\t ENTER NEW PRICE : ";
+            cin >> unit_price;
+            sto.updateItem(name, product_id, copies, unit_price);
+            break;
+
+        case 5:
+            sto.displayInventory();
+            break;
+
+        case 6:
+            sto.displayInventoryStack();
+            break;
+
+        case 7:
+            sto.displayInventoryQueue();
+            break;
+        }
+    } while (option != 8);
+
+    return 0;
+}
